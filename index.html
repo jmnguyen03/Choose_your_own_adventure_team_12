@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Cave of Time - CYOA</title>
+  <style>
+    :root {
+      --paper: #f5f0e8;
+      --ink: #2b2118;
+      --border: #b7a98b;
+      --link: #5a3f1f;
+      --link-hover: #7c552a;
+      --panel: #f8f4ec;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .book {
+      width: min(900px, 100%);
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(35, 25, 15, 0.15), inset 0 0 18px rgba(115, 93, 63, 0.18);
+      padding: 28px 24px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      color: #4d3b2a;
+      font-size: 0.95rem;
+    }
+
+    .story {
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: 1.05rem;
+      margin: 0 0 24px;
+    }
+
+    .choices {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .choice {
+      border: 0;
+      background: none;
+      color: var(--link);
+      text-align: left;
+      font: inherit;
+      font-size: 1.02rem;
+      cursor: pointer;
+      padding: 2px 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .choice:hover,
+    .choice:focus-visible {
+      color: var(--link-hover);
+      outline: none;
+    }
+
+    .ending {
+      padding-top: 8px;
+    }
+
+    .ending h2 {
+      margin: 0 0 8px;
+      font-size: 1.3rem;
+    }
+
+    .restart {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: #efe6d8;
+      color: var(--ink);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .restart:hover,
+    .restart:focus-visible {
+      background: #e8dcc9;
+      outline: none;
+    }
+
+    .error {
+      color: #7e1f1f;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main class="book">
+    <h1>The Cave of Time</h1>
+    <div class="meta">
+      <span id="pageLabel">Page 2</span>
+      <span id="decisionLabel">Decisions: 0</span>
+    </div>
+    <p id="storyText" class="story">Loading story...</p>
+    <section id="choices" class="choices"></section>
+  </main>
+
+  <script>
+    const START_PAGE = "2";
+    let storyData = {};
+    let currentPage = START_PAGE;
+    let decisionCount = 0;
+
+    const pageLabel = document.getElementById("pageLabel");
+    const decisionLabel = document.getElementById("decisionLabel");
+    const storyText = document.getElementById("storyText");
+    const choicesContainer = document.getElementById("choices");
+
+    function updateMeta() {
+      pageLabel.textContent = `Page ${currentPage}`;
+      decisionLabel.textContent = `Decisions: ${decisionCount}`;
+    }
+
+    function renderPage(page) {
+      const pageData = storyData[page];
+      if (!pageData) {
+        storyText.innerHTML = '<span class="error">Missing page data.</span>';
+        choicesContainer.innerHTML = "";
+        return;
+      }
+
+      currentPage = page;
+      updateMeta();
+      storyText.textContent = pageData.text || "[No text available for this page.]";
+      choicesContainer.innerHTML = "";
+
+      if (!pageData.choices || pageData.choices.length === 0) {
+        const ending = document.createElement("div");
+        ending.className = "ending";
+        ending.innerHTML = "<h2>The End</h2><p>You reached a terminal page in this timeline.</p>";
+
+        const restart = document.createElement("button");
+        restart.className = "restart";
+        restart.type = "button";
+        restart.textContent = "Start Over";
+        restart.addEventListener("click", () => {
+          currentPage = START_PAGE;
+          decisionCount = 0;
+          renderPage(START_PAGE);
+        });
+
+        ending.appendChild(restart);
+        choicesContainer.appendChild(ending);
+        return;
+      }
+
+      pageData.choices.forEach((choice) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.textContent = `→ ${choice.text}`;
+        button.addEventListener("click", () => {
+          decisionCount += 1;
+          renderPage(choice.page);
+        });
+        choicesContainer.appendChild(button);
+      });
+    }
+
+    async function init() {
+      try {
+        const response = await fetch("output/story.json");
+        if (!response.ok) {
+          throw new Error(`Failed to load story.json (${response.status})`);
+        }
+
+        storyData = await response.json();
+        if (!storyData[START_PAGE]) {
+          throw new Error("Start page 2 not found in story data.");
+        }
+
+        renderPage(START_PAGE);
+      } catch (error) {
+        pageLabel.textContent = "Page ?";
+        decisionLabel.textContent = "Decisions: 0";
+        storyText.innerHTML = `<span class="error">Could not load story data: ${error.message}</span>`;
+        choicesContainer.innerHTML = "";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
