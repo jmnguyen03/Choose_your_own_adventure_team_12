@@ -144,3 +144,29 @@ When resuming work:
 2. Treat output/cot-pages-ocr-v2 as the current source text.
 3. If extraction quality needs improvement, update reextract_cot_ocr_split.py rather than rebuilding older workflows.
 4. If graph or story outputs need regeneration, rerun build_story_graph.py, write_all_stories.py, and render_story_graph_svg.py in that order.
+
+## Web Game (Added by Team 12)
+
+The team extended the project by building a fully playable browser-based game.
+
+### New Files
+- `index.html` — single-page web app that loads the story and lets users play
+- `output/story.json` — generated from the OCR pages and story graph
+
+### How it works
+- `index.html` fetches `story.json` at load time
+- Displays the current page's text in a retro-styled reading pane
+- Shows branching choices on the right panel
+- Tracks page history in a "Trail" sidebar
+- Counts decisions made per session
+- Terminal pages (no choices) show a restart option
+
+### Design
+- Dark forest/cave theme with parchment text panel
+- Crimson Pro serif font for story text
+- Keyboard shortcuts (1–9) to select choices
+- Responsive layout
+
+### Deployment
+Deployed via GitHub Pages at:
+https://jmnguyen03.github.io/Choose_your_own_adventure_team_12/
